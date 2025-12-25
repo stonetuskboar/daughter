@@ -4,7 +4,10 @@ using UnityEngine;
 
 public static class EasingFunc
 {
-
+    public static float Line(float x) 
+    {
+        return x;
+    }
     public static float EaseOutQuad(float x)
     {
         return 1 - Mathf.Pow(1 - x, 2);
@@ -235,7 +238,11 @@ public static class EasingFunc
 
     public static Func<float, float> GetEaseFuncByType(EaseType type, float time)
     {
-        if (type == EaseType.EaseOutQuad)
+        if(type == EaseType.Line)
+        {
+            return Line;
+        }
+        else if (type == EaseType.EaseOutQuad)
         {
             return EaseOutQuad;
         }
@@ -348,6 +355,7 @@ public static class EasingFunc
 }
 public enum EaseType
 {
+    Line,
     EaseOutQuad,
     EaseOutCubic,
     EaseInQuad,

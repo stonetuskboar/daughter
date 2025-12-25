@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
+public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     public event Action PointerEnterd;
-    public event Action PointerDowned;
+    public event Action PointerClicked;
     public event Action PointerExited;
     protected Vector2 OgSize;
     protected State state = State.idle;
@@ -16,11 +16,12 @@ public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerE
         idle,
         hover,
         disable,
+        selected,
     }
     public float hoverTime = 0.2f;
-    public float unHoverTime = 0.3f;
+    public float normalTime = 0.3f;
     public Vector2 HoverSize = new Vector2(1.2f, 1f);
-    public BasicColorTweenObject buttonGraphic;
+
     protected override void Awake()
     {
         base.Awake();
@@ -37,27 +38,33 @@ public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerE
     {
         PointerExited?.Invoke();
     }
-    protected void OnPointerDowned()
+    protected void OnPointerClicked()
     {
-        PointerDowned?.Invoke();
+        PointerClicked?.Invoke();
     }
 
     public virtual void ChangeStateToIdle()
     {
         state = State.idle;
-        buttonGraphic.NormalTween(unHoverTime);
         if(HoverSize != Vector2.one)
         {
-            DoSizeTween(OgSize, unHoverTime + 0.1f, type: EaseType.M3Spring);
+            DoSizeTween(OgSize, normalTime + 0.1f, type: EaseType.M3Spring);
         }
     }
     public virtual void ChangeStateToHover()
     {
         state = State.hover;
-        buttonGraphic.HoverTween(hoverTime);
         if (HoverSize != Vector2.one)
         {
             DoSizeTween(HoverSize * OgSize, hoverTime + 0.1f, type: EaseType.M3Spring);
+        }
+    }
+    public virtual void ChangeStateToSelected()
+    {
+        state = State.selected;
+        if (HoverSize != Vector2.one)
+        {
+            DoSizeTween(OgSize, normalTime + 0.1f, type: EaseType.M3Spring);
         }
     }
     public virtual void ChangeStateToDisable()
@@ -65,16 +72,11 @@ public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerE
         state = State.disable;
         if(GetCanvasGroup() != null )
         {
-            DoAlphaTween(0.5f, unHoverTime);
-            buttonGraphic.NormalTween(unHoverTime);
-        }
-        else
-        {
-            buttonGraphic.DoAlphaTween(buttonGraphic.color.a / 2, unHoverTime);
+            DoAlphaTween(0.5f, normalTime);
         }
         if (HoverSize != Vector2.one)
         {
-            DoSizeTween(OgSize, unHoverTime + 0.1f, type: EaseType.M3Spring);
+            DoSizeTween(OgSize, normalTime + 0.1f, type: EaseType.M3Spring);
         }
     }
     public virtual void ChangeStateToDisableImmediately()
@@ -83,24 +85,19 @@ public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerE
         if(GetCanvasGroup() != null )
         {
             SetCanvasGroupAlpha(0.5f);
-            buttonGraphic.SetToNormal();
-        }
-        else
-        {
-            buttonGraphic.SetAlpha(buttonGraphic.color.a /2);
         }
         SetSize(OgSize);
     }
-    public virtual void OnPointerDown(PointerEventData eventData)
+    public virtual void OnPointerClick(PointerEventData eventData)
     {
         if (state != State.disable)
         {
-            OnPointerDowned();
+            OnPointerClicked();
         }
     }
     public virtual void OnPointerEnter(PointerEventData eventData)
     {
-        if (state != State.disable)
+        if (state == State.idle)
         {
             ChangeStateToHover();
             OnPointerEntered();
@@ -109,7 +106,7 @@ public class BasicPressableButton : BasicUIView, IPointerEnterHandler, IPointerE
 
     public virtual void OnPointerExit(PointerEventData eventData)
     {
-        if (state != State.disable)
+        if (state == State.hover)
         {
             ChangeStateToIdle();
             OnPointerExited();
